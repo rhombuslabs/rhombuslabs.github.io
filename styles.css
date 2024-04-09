@@ -1,0 +1,16 @@
+@font-face {
+    font-family: "Splatoon1";
+    src: url("fonts/Splatoon1.otf");
+}
+
+@font-face {
+    font-family: "Splatoon2";
+    src: url("fonts/Splatoon2.otf");
+}
+
+.s1 {
+    font-family: "Splatoon1";
+}
+.s2 {
+    font-family: "Splatoon2";
+}
