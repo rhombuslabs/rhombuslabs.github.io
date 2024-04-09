@@ -1,5 +1,12 @@
 {
-  "dependencies": {
+  "scripts": {
+    "start": "lite-server",
+    "build": "tsc",
+    "dev": "concurrently \"npm run build -- --watch\" \"npm run start\""
+},
+"devDependencies": {
+    "concurrently": "^8.2.2",
+    "lite-server": "^2.6.1",
     "typescript": "^5.4.4"
   }
 }
