@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CBT Behavioural Activation Worksheet</title>
     <style>
-        /* Add your CSS styles here */
         body {
             font-family: Arial, sans-serif;
         }
+
         .container {
             max-width: 800px;
             margin: 0 auto;
@@ -16,54 +17,49 @@
             background-color: #f9f9f9;
             border: 1px solid #ddd;
         }
+
         .form-section {
             margin-bottom: 20px;
         }
+
         .form-section h2 {
             margin-bottom: 10px;
         }
+
         .form-section input[type="text"],
         .form-section select {
             width: 100%;
             padding: 8px;
             margin-bottom: 10px;
         }
+
         .form-section table {
             width: 100%;
             border-collapse: collapse;
         }
-        .form-section table, .form-section th, .form-section td {
+
+        .form-section table,
+        .form-section th,
+        .form-section td {
             border: 1px solid #ddd;
             padding: 8px;
         }
+
+        .form-section button {
+            margin-top: 10px;
+        }
     </style>
 </head>
-<body onload="loadData()" onchange="handleInputChange()">
+
+<body onload="loadData()">
     <div class="container">
         <h1>CBT Behavioural Activation Worksheet</h1>
         <div class="form-section">
             <h2>Date</h2>
-            <input type="date" id="dateField" onchange="loadData()">
-            <button onclick="incrementDate()">Next Day</button>
-            <script>
-            function incrementDate() {
-                const dateField = document.getElementById('dateField');
-                const date = new Date(dateField.value);
-                date.setDate(date.getDate() + 1);
-                dateField.value = date.toISOString().substr(0, 10);
-                loadData();
-            }
-            </script>
-            <button onclick="decrementDate()">Previous Day</button>
-            <script>
-            function decrementDate() {
-                const dateField = document.getElementById('dateField');
-                const date = new Date(dateField.value);
-                date.setDate(date.getDate() - 1);
-                dateField.value = date.toISOString().substr(0, 10);
-                loadData();
-            }
-            </script>
+            <input type="date" id="dateField">
+            <button onclick="loadPreviousDate()">Previous</button>
+            <button id="nextButton" onclick="loadNextDate()">Next</button>
+            <button id="todayButton" onclick="loadToday()">Today</button>
         </div>
         <div class="form-section">
             <h2>List three activities you enjoy</h2>
@@ -90,6 +86,7 @@
                         <th>Pleasure After</th>
                         <th>Achievement Before</th>
                         <th>Achievement After</th>
+                        <th>Remove</th>
                     </tr>
                 </thead>
                 <tbody id="activityTable">
@@ -98,13 +95,19 @@
             </table>
             <button onclick="addActivityRow()">Add Activity</button>
         </div>
+        <button onclick="saveData()">Save</button>
         <button onclick="generateReport()">Generate Report</button>
     </div>
     <script>
-        function loadData() {
+        function loadData(date = null) {
             const dateField = document.getElementById('dateField');
-            const today = new Date();
-            dateField.value = today.toISOString().substr(0, 10);
+            const nextButton = document.getElementById('nextButton');
+            if (!date) {
+                const today = new Date();
+                dateField.value = today.toISOString().substr(0, 10);
+            } else {
+                dateField.value = date;
+            }
 
             const savedDate = localStorage.getItem('savedDate');
             if (savedDate !== dateField.value) {
@@ -128,7 +131,8 @@
             const activities = JSON.parse(localStorage.getItem('activities'));
             if (activities) {
                 const table = document.getElementById('activityTable');
-                activities.forEach(activity => {
+                table.innerHTML = ''; // Clear the table before loading data
+                activities.forEach((activity, index) => {
                     const row = table.insertRow();
                     Object.values(activity).forEach(value => {
                         const cell = row.insertCell();
@@ -137,8 +141,17 @@
                         input.value = value;
                         cell.appendChild(input);
                     });
+                    const removeCell = row.insertCell();
+                    const removeButton = document.createElement('button');
+                    removeButton.innerText = 'Remove';
+                    removeButton.onclick = () => removeActivityRow(index);
+                    removeCell.appendChild(removeButton);
                 });
             }
+
+            // Disable "Next" button if viewing today's data
+            const todayStr = new Date().toISOString().substr(0, 10);
+            nextButton.disabled = (dateField.value === todayStr);
         }
 
         function addActivityRow() {
@@ -150,6 +163,17 @@
                 input.type = 'text';
                 cell.appendChild(input);
             }
+            const removeCell = row.insertCell();
+            const removeButton = document.createElement('button');
+            removeButton.innerText = 'Remove';
+            removeButton.onclick = () => removeActivityRow(row.rowIndex - 1);
+            removeCell.appendChild(removeButton);
+        }
+
+        function removeActivityRow(index) {
+            const table = document.getElementById('activityTable');
+            table.deleteRow(index);
+            saveData();
         }
 
         function saveData() {
@@ -165,21 +189,46 @@
 
             const activities = [];
             const table = document.getElementById('activityTable');
-            for (const row of table.rows) {
+            for (let i = 0, row; row = table.rows[i]; i++) {
                 const activity = {};
-                const cells = row.cells;
-                for (let j = 0; j < cells.length; j++) {
-                    const input = cells[j].querySelector('input');
-                    if (input) {
-                        activity[`col${j}`] = input.value;
+                for (let j = 0, col; col = row.cells[j]; j++) {
+                    if (j < 8) {
+                        activity[`col${j}`] = col.firstChild.value;
                     }
                 }
-                if (Object.keys(activity).length > 0) {
-                    activities.push(activity);
-                }
+                activities.push(activity);
             }
             localStorage.setItem('activities', JSON.stringify(activities));
         }
+
+        function loadPreviousDate() {
+            const currentDate = new Date(document.getElementById('dateField').value);
+            let previousDate = new Date(currentDate.setDate(currentDate.getDate() - 1));
+            const savedDates = Object.keys(localStorage)
+                .filter(key => key.startsWith('savedDate_'))
+                .map(key => new Date(key.replace('savedDate_', '')));
+            while (!savedDates.includes(previousDate.toISOString().split('T')[0])) {
+                previousDate.setDate(previousDate.getDate() - 1);
+                if (previousDate < new Date(0)) break; // Prevent infinite loop
+            }
+            loadData(previousDate.toISOString().split('T')[0]);
+        }
+
+        function loadNextDate() {
+            const currentDate = new Date(document.getElementById('dateField').value);
+            let nextDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
+            const savedDates = Object.keys(localStorage)
+                .filter(key => key.startsWith('savedDate_'))
+                .map(key => new Date(key.replace('savedDate_', '')));
+            while (!savedDates.includes(nextDate.toISOString().split('T')[0]) && nextDate <= new Date()) {
+                nextDate.setDate(nextDate.getDate() + 1);
+            }
+            if (nextDate <= new Date()) {
+                loadData(nextDate.toISOString().split('T')[0]);
+            }
+        }
+
+        function loadToday() { loadData(new Date().toISOString().substr(0, 10)); }
 
         function generateReport() {
             const activities = JSON.parse(localStorage.getItem('activities'));
@@ -198,11 +247,8 @@
             alert(report);
         }
 
-        function handleInputChange() {
-            saveData();
-        }
-
         window.addEventListener('beforeunload', saveData);
     </script>
 </body>
+
 </html>
