@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metronome</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            text-align: center;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        .slider-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        input[type="range"] {
+            flex-grow: 1;
+            margin: 0 10px;
+        }
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        button {
+            flex: 1;
+            margin: 5px;
+        }
+        .accent-controls {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+        .accent-toggle {
+            display: inline-block;
+        }
+        @media (max-width: 600px) {
+            .button-container {
+                flex-direction: column;
+            }
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Metronome</h1>
+        <div class="controls">
+            <div class="slider-container">
+                <input type="range" id="bpmSlider" min="40" max="208" value="120">
+            </div>
+            <div class="button-container">
+                <button id="minus">-</button>
+                <button id="plus">+</button>
+            </div>
+        </div>
+        <div>
+            BPM: <span id="bpmDisplay">120</span>
+        </div>
+        <div class="accent-controls">
+            <div class="accent-toggle">
+                <label for="accent1">1</label>
+                <input type="checkbox" id="accent1" checked>
+            </div>
+            <div class="accent-toggle">
+                <label for="accent2">2</label>
+                <input type="checkbox" id="accent2">
+            </div>
+            <div class="accent-toggle">
+                <label for="accent3">3</label>
+                <input type="checkbox" id="accent3">
+            </div>
+            <div class="accent-toggle">
+                <label for="accent4">4</label>
+                <input type="checkbox" id="accent4">
+            </div>
+        </div>
+        <button id="startStop">Start</button>
+    </div>
+    <script>
+        const bpmSlider = document.getElementById('bpmSlider');
+        const bpmDisplay = document.getElementById('bpmDisplay');
+        const minusButton = document.getElementById('minus');
+        const plusButton = document.getElementById('plus');
+        const startStopButton = document.getElementById('startStop');
+        const accents = [
+            document.getElementById('accent1'),
+            document.getElementById('accent2'),
+            document.getElementById('accent3'),
+            document.getElementById('accent4')
+        ];
+
+        let bpm = 120;
+        let isPlaying = false;
+        let intervalId;
+
+        bpmSlider.addEventListener('input', function() {
+            bpm = bpmSlider.value;
+            bpmDisplay.innerText = bpm;
+            if (isPlaying) {
+                clearInterval(intervalId);
+                startMetronome();
+            }
+        });
+
+        minusButton.addEventListener('click', function() {
+            bpm = Math.max(40, bpm - 1);
+            bpmSlider.value = bpm;
+            bpmDisplay.innerText = bpm;
+            if (isPlaying) {
+                clearInterval(intervalId);
+                startMetronome();
+            }
+        });
+
+        plusButton.addEventListener('click', function() {
+            bpm = Math.min(208, bpm + 1);
+            bpmSlider.value = bpm;
+            bpmDisplay.innerText = bpm;
+            if (isPlaying) {
+                clearInterval(intervalId);
+                startMetronome();
+            }
+        });
+
+        startStopButton.addEventListener('click', function() {
+            if (isPlaying) {
+                stopMetronome();
+            } else {
+                startMetronome();
+            }
+        });
+
+        function startMetronome() {
+            isPlaying = true;
+            startStopButton.innerText = 'Stop';
+            const interval = 60000 / bpm;
+            let beatCount = 0;
+            intervalId = setInterval(function() {
+                playSound(accents[beatCount].checked);
+                beatCount = (beatCount + 1) % 4;
+            }, interval);
+        }
+
+        function stopMetronome() {
+            isPlaying = false;
+            startStopButton.innerText = 'Start';
+            clearInterval(intervalId);
+        }
+
+        function playSound(isAccented) {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(isAccented ? 880 : 440, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1);
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+    </script>
+</body>
+</html>
