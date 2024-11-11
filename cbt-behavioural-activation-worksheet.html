@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBT Behavioural Activation Worksheet</title>
+    <style>
+        /* Add your CSS styles here */
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+        }
+        .form-section {
+            margin-bottom: 20px;
+        }
+        .form-section h2 {
+            margin-bottom: 10px;
+        }
+        .form-section input[type="text"],
+        .form-section select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        .form-section table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .form-section table, .form-section th, .form-section td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+    </style>
+</head>
+<body onload="loadData()">
+    <div class="container">
+        <h1>CBT Behavioural Activation Worksheet</h1>
+        <div class="form-section">
+            <h2>Date</h2>
+            <input type="date" id="dateField">
+        </div>
+        <div class="form-section">
+            <h2>List three activities you enjoy</h2>
+            <input type="text" id="activity1" placeholder="Activity 1">
+            <input type="text" id="activity2" placeholder="Activity 2">
+            <input type="text" id="activity3" placeholder="Activity 3">
+        </div>
+        <div class="form-section">
+            <h2>List three responsibilities you need to take care of</h2>
+            <input type="text" id="responsibility1" placeholder="Responsibility 1">
+            <input type="text" id="responsibility2" placeholder="Responsibility 2">
+            <input type="text" id="responsibility3" placeholder="Responsibility 3">
+        </div>
+        <div class="form-section">
+            <h2>Activity Rating</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Activity and Location</th>
+                        <th>Date</th>
+                        <th>Depression Before</th>
+                        <th>Depression After</th>
+                        <th>Pleasure Before</th>
+                        <th>Pleasure After</th>
+                        <th>Achievement Before</th>
+                        <th>Achievement After</th>
+                    </tr>
+                </thead>
+                <tbody id="activityTable">
+                    <!-- Rows will be added dynamically -->
+                </tbody>
+            </table>
+            <button onclick="addActivityRow()">Add Activity</button>
+        </div>
+        <button onclick="generateReport()">Generate Report</button>
+    </div>
+    <script>
+        function loadData() {
+            const dateField = document.getElementById('dateField');
+            const today = new Date();
+            dateField.value = today.toISOString().substr(0, 10);
+
+            const savedDate = localStorage.getItem('savedDate');
+            if (savedDate !== dateField.value) {
+                localStorage.setItem('savedDate', dateField.value);
+                localStorage.removeItem('activities');
+                localStorage.removeItem('activity1');
+                localStorage.removeItem('activity2');
+                localStorage.removeItem('activity3');
+                localStorage.removeItem('responsibility1');
+                localStorage.removeItem('responsibility2');
+                localStorage.removeItem('responsibility3');
+            }
+
+            document.getElementById('activity1').value = localStorage.getItem('activity1') || '';
+            document.getElementById('activity2').value = localStorage.getItem('activity2') || '';
+            document.getElementById('activity3').value = localStorage.getItem('activity3') || '';
+            document.getElementById('responsibility1').value = localStorage.getItem('responsibility1') || '';
+            document.getElementById('responsibility2').value = localStorage.getItem('responsibility2') || '';
+            document.getElementById('responsibility3').value = localStorage.getItem('responsibility3') || '';
+
+            const activities = JSON.parse(localStorage.getItem('activities'));
+            if (activities) {
+                const table = document.getElementById('activityTable');
+                activities.forEach(activity => {
+                    const row = table.insertRow();
+                    Object.values(activity).forEach(value => {
+                        const cell = row.insertCell();
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.value = value;
+                        cell.appendChild(input);
+                    });
+                });
+            }
+        }
+
+        function addActivityRow() {
+            const table = document.getElementById('activityTable');
+            const row = table.insertRow();
+            for (let i = 0; i < 8; i++) {
+                const cell = row.insertCell();
+                const input = document.createElement('input');
+                input.type = 'text';
+                cell.appendChild(input);
+            }
+        }
+
+        function saveData() {
+            const dateField = document.getElementById('dateField').value;
+            localStorage.setItem('savedDate', dateField);
+
+            localStorage.setItem('activity1', document.getElementById('activity1').value);
+            localStorage.setItem('activity2', document.getElementById('activity2').value);
+            localStorage.setItem('activity3', document.getElementById('activity3').value);
+            localStorage.setItem('responsibility1', document.getElementById('responsibility1').value);
+            localStorage.setItem('responsibility2', document.getElementById('responsibility2').value);
+            localStorage.setItem('responsibility3', document.getElementById('responsibility3').value);
+
+            const activities = [];
+            const table = document.getElementById('activityTable');
+            for (let i = 0, row; row = table.rows[i]; i++) {
+                const activity = {};
+                for (let j = 0, col; col = row.cells[j]; j++) {
+                    activity[`col${j}`] = col.firstChild.value;
+                }
+                activities.push(activity);
+            }
+            localStorage.setItem('activities', JSON.stringify(activities));
+        }
+
+        function generateReport() {
+            const activities = JSON.parse(localStorage.getItem('activities'));
+            if (!activities) {
+                alert('No data available to generate report.');
+                return;
+            }
+            let report = 'Activity Report:\n\n';
+            activities.forEach((activity, index) => {
+                report += `Activity ${index + 1}:\n`;
+                Object.keys(activity).forEach(key => {
+                    report += `${key}: ${activity[key]}\n`;
+                });
+                report += '\n';
+            });
+            alert(report);
+        }
+
+        window.addEventListener('beforeunload', saveData);
+    </script>
+</body>
+</html>
