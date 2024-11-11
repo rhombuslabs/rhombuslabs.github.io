@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-</head>
-<body onchange="handleInputChange()">
-<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CBT Behavioural Activation Worksheet</title>
@@ -41,12 +38,32 @@
         }
     </style>
 </head>
-<body onload="loadData()">
+<body onload="loadData()" onchange="handleInputChange()">
     <div class="container">
         <h1>CBT Behavioural Activation Worksheet</h1>
         <div class="form-section">
             <h2>Date</h2>
-            <input type="date" id="dateField">
+            <input type="date" id="dateField" onchange="loadData()">
+            <button onclick="incrementDate()">Next Day</button>
+            <script>
+            function incrementDate() {
+                const dateField = document.getElementById('dateField');
+                const date = new Date(dateField.value);
+                date.setDate(date.getDate() + 1);
+                dateField.value = date.toISOString().substr(0, 10);
+                loadData();
+            }
+            </script>
+            <button onclick="decrementDate()">Previous Day</button>
+            <script>
+            function decrementDate() {
+                const dateField = document.getElementById('dateField');
+                const date = new Date(dateField.value);
+                date.setDate(date.getDate() - 1);
+                dateField.value = date.toISOString().substr(0, 10);
+                loadData();
+            }
+            </script>
         </div>
         <div class="form-section">
             <h2>List three activities you enjoy</h2>
@@ -148,12 +165,18 @@
 
             const activities = [];
             const table = document.getElementById('activityTable');
-            for (let i = 0, row; row = table.rows[i]; i++) {
+            for (const row of table.rows) {
                 const activity = {};
-                for (let j = 0, col; col = row.cells[j]; j++) {
-                    activity[`col${j}`] = col.firstChild.value;
+                const cells = row.cells;
+                for (let j = 0; j < cells.length; j++) {
+                    const input = cells[j].querySelector('input');
+                    if (input) {
+                        activity[`col${j}`] = input.value;
+                    }
                 }
-                activities.push(activity);
+                if (Object.keys(activity).length > 0) {
+                    activities.push(activity);
+                }
             }
             localStorage.setItem('activities', JSON.stringify(activities));
         }
