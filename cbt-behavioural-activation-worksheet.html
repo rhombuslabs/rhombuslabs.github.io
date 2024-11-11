@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+</head>
+<body onchange="handleInputChange()">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CBT Behavioural Activation Worksheet</title>
@@ -170,6 +173,10 @@
                 report += '\n';
             });
             alert(report);
+        }
+
+        function handleInputChange() {
+            saveData();
         }
 
         window.addEventListener('beforeunload', saveData);
